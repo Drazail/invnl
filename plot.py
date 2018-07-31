@@ -1,97 +1,118 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn import svm, datasets
-from sklearn.ensemble import RandomForestClassifier
+from matplotlib.colors import ListedColormap
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.datasets import make_moons, make_circles, make_classification
+from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
+h = .02  # step size in the mesh
 
-def make_meshgrid(x, y, h=.02):
-    """Create a mesh of points to plot in
+names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
+         "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
+         "Naive Bayes", "QDA"]
 
-    Parameters
-    ----------
-    x: data to base x-axis meshgrid on
-    y: data to base y-axis meshgrid on
-    h: stepsize for meshgrid, optional
+classifiers = [
+    KNeighborsClassifier(3),
+    SVC(kernel="linear", C=0.025),
+    SVC(gamma=2, C=1),
+    GaussianProcessClassifier(1.0 * RBF(1.0)),
+    DecisionTreeClassifier(max_depth=5),
+    RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
+    MLPClassifier(alpha=1),
+    AdaBoostClassifier(),
+    GaussianNB(),
+    QuadraticDiscriminantAnalysis()]
 
-    Returns
-    -------
-    xx, yy : ndarray
-    """
-    x_min, x_max = x.min() - 1, x.max() + 1
-    y_min, y_max = y.min() - 1, y.max() + 1
+X, y = make_classification(n_features=2, n_redundant=0, n_informative=2,
+                           random_state=1, n_clusters_per_class=1)
+rng = np.random.RandomState(2)
+X += 2 * rng.uniform(size=X.shape)
+linearly_separable = (X, y)
+f = open("./DataSets/INnoDup.csv")
+iNvLNdata = np.loadtxt(f, delimiter=",")
+
+iNvLNX = iNvLNdata[:, 5:7]
+iNvLNy = iNvLNdata[:, 21]
+
+iNvLNDataSet= (iNvLNX,iNvLNy)
+
+datasets = [ iNvLNDataSet ]
+
+figure = plt.figure(figsize=(27, 9))
+i = 1
+# iterate over datasets
+for ds_cnt, ds in enumerate(datasets):
+    # preprocess dataset, split into training and test part
+    X, y = ds
+    X = StandardScaler().fit_transform(X)
+    X_train, X_test, y_train, y_test = \
+        train_test_split(X, y, test_size=.4, random_state=42)
+
+    x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+    y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
                          np.arange(y_min, y_max, h))
-    return xx, yy
 
-
-def plot_contours(ax, clf, xx, yy, **params):
-    """Plot the decision boundaries for a classifier.
-
-    Parameters
-    ----------
-    ax: matplotlib axes object
-    clf: a classifier
-    xx: meshgrid ndarray
-    yy: meshgrid ndarray
-    params: dictionary of params to pass to contourf, optional
-    """
-    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
-    print(Z)
-    Z = Z.reshape(xx.shape)
-    out = ax.contourf(xx, yy, Z, **params)
-    return out
-
-
-# import some data to play with
-iris = datasets.load_iris()
-
-f = open("./DataSets/InteractiveNarrative .csv")
-data = np.loadtxt(f, delimiter=",")
-
-# Take the first two features. We could avoid this by using a two-dim dataset
-X = data[:, 7:9]
-y = data[:, 21]
-ML= data[:, :21]
-#X = iris.data[:, :2]
-#y = iris.target
-
-# we create an instance of SVM and fit out data. We do not scale our
-# data since we want to plot the support vectors
-C = 1.0  # SVM regularization parameter
-models = (svm.SVC(kernel='linear'),
-          svm.LinearSVC(),
-          svm.SVC(kernel='rbf'),
-          svm.SVC(kernel='poly'),
-          RandomForestClassifier(),)
-
-models = (clf.fit(X, y) for clf in models)
-
-
-# title for the plots
-titles = ('SVC with linear kernel',
-          'LinearSVC (linear kernel)',
-          'SVC with RBF kernel',
-          'SVC with polynomial (degree 3) kernel',
-          'RandomForestClassifier')
-
-# Set-up 2x2 grid for plotting.
-fig, sub = plt.subplots(3, 3)
-plt.subplots_adjust(wspace=0.4, hspace=0.4)
-
-X0, X1 = X[:, 0], X[:, 1]
-xx, yy = make_meshgrid(X0, X1)
-
-for clf, title, ax in zip(models, titles, sub.flatten()):
-    plot_contours(ax, clf, xx, yy,
-                  cmap=plt.cm.coolwarm, alpha=0.8)
-    ax.scatter(X0, X1, c=y, cmap=plt.cm.coolwarm, s=20, edgecolors='k')
+    # just plot the dataset first
+    cm = plt.cm.RdBu
+    cm_bright = ListedColormap(['#FF0000', '#0000FF'])
+    ax = plt.subplot(len(datasets), len(classifiers) + 1, i)
+    if ds_cnt == 0:
+        ax.set_title("Input data")
+    # Plot the training points
+    ax.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=cm_bright,
+               edgecolors='k')
+    # and testing points
+    ax.scatter(X_test[:, 0], X_test[:, 1], c=y_test, cmap=cm_bright, alpha=0.6,
+               edgecolors='k')
     ax.set_xlim(xx.min(), xx.max())
     ax.set_ylim(yy.min(), yy.max())
-    ax.set_xlabel('Sepal length')
-    ax.set_ylabel('Sepal width')
     ax.set_xticks(())
     ax.set_yticks(())
-    ax.set_title(title)
+    i += 1
 
-print(X)
+    # iterate over classifiers
+    for name, clf in zip(names, classifiers):
+        ax = plt.subplot(len(datasets), len(classifiers) + 1, i)
+        clf.fit(X_train, y_train)
+        score = clf.score(X_test, y_test)
+
+        # Plot the decision boundary. For that, we will assign a color to each
+        # point in the mesh [x_min, x_max]x[y_min, y_max].
+        if hasattr(clf, "decision_function"):
+            Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
+        else:
+            Z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])[:, 1]
+
+        # Put the result into a color plot
+        Z = Z.reshape(xx.shape)
+        ax.contourf(xx, yy, Z, cmap=cm, alpha=.8)
+
+        # Plot also the training points
+        ax.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=cm_bright,
+                   edgecolors='k')
+        # and testing points
+        ax.scatter(X_test[:, 0], X_test[:, 1], c=y_test, cmap=cm_bright,
+                   edgecolors='k', alpha=0.6)
+
+        ax.set_xlim(xx.min(), xx.max())
+        ax.set_ylim(yy.min(), yy.max())
+        ax.set_xticks(())
+        ax.set_yticks(())
+        if ds_cnt == 0:
+            ax.set_title(name)
+        ax.text(xx.max() - .3, yy.min() + .3, ('%.2f' % score).lstrip('0'),
+                size=15, horizontalalignment='right')
+        i += 1
+
+plt.tight_layout()
 plt.show()
