@@ -1,0 +1,11 @@
+{
+  "name": "invnl",
+  "version": "0.0.1",
+  "description": "Interactive Narrative vs Linear Narrative,  a classification problem",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "Drazail",
+  "license": "MIT"
+}
