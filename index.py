@@ -37,7 +37,7 @@ y = data[:, 21]
 #X = iris.data
 #y = iris.target
 
-train_feats, test_feats, train_labels, test_labels = tts(X, y, test_size=0.2)
+
 
 
 names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
@@ -57,7 +57,25 @@ classifiers = [
     QuadraticDiscriminantAnalysis()]
 
 
-for name, clf in zip(names, classifiers):
-        clf.fit(train_feats, train_labels)
-        score = clf.score(test_feats, test_labels)
-        print name," : ", score
+
+testOut = []
+scores = [0,0,0,0,0,0,0,0,0,0]
+final= [0,0,0,0,0,0,0,0,0,0]
+j=0
+while j < 100 :
+    i = 0
+    while i < 1000 :
+        for name, clf in zip(names, classifiers):
+                train_feats, test_feats, train_labels, test_labels = tts(X, y, test_size=0.2)
+                clf.fit(train_feats, train_labels)
+                score = clf.score(test_feats, test_labels)
+                scores [names.index(name)] = scores [names.index(name)] + score/1000
+                final [names.index(name)] = final [names.index(name)] + score/1000
+        i+=1
+    testOut.append(scores)
+    scores=[0,0,0,0,0,0,0,0,0,0]
+    j+=1
+final[:] = [x / 100 for x in final]
+testOut.append("final")
+testOut.append(final)
+np.savetxt('testNoDup.out', testOut, fmt='%s')
