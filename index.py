@@ -22,6 +22,10 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
+
+from pyearth import Earth
+
+from sklearn.pipeline import Pipeline
 import matplotlib.pyplot as plt
 
 
@@ -42,40 +46,44 @@ names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
          "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
          "Naive Bayes", "QDA"]
 
+boosted_model = AdaBoostClassifier(DecisionTreeClassifier(max_depth=5))
+
 classifiers = [
     KNeighborsClassifier(3),
     SVC(kernel="linear", C=0.025),
     SVC(gamma=2, C=1),
     GaussianProcessClassifier(1.0 * RBF(1.0)),
-    DecisionTreeClassifier(max_depth=5),
-    RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
-    MLPClassifier(alpha=1),
+    DecisionTreeClassifier(max_depth=1),
+    RandomForestClassifier(max_depth=10000, n_estimators=2000, max_features=20),
+    MLPClassifier(alpha=1,max_iter=10000),
     AdaBoostClassifier(),
     GaussianNB(),
-    QuadraticDiscriminantAnalysis()]
+    QuadraticDiscriminantAnalysis(),
+    ]
 
 
 testOut = []
 scores = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 final = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 j = 0
-while j < 100:
+while j < 10:
     i = 0
-    while i < 1000:
+    while i < 10:
         for name, clf in zip(names, classifiers):
             train_feats, test_feats, train_labels, test_labels = tts(
                 X, y, test_size=0.2)
             clf.fit(train_feats, train_labels)
             score = clf.score(test_feats, test_labels)
-            scores[names.index(name)] = scores[names.index(name)] + score/1000
-            final[names.index(name)] = final[names.index(name)] + score/1000
+            scores[names.index(name)] = scores[names.index(name)] + score/10
+            final[names.index(name)] = final[names.index(name)] + score/10
         print(str(j) + " ---"),
         i += 1
     testOut.append(scores)
 
     scores = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    np.savetxt('pipe.out', testOut, fmt='%s')
     j += 1
-final[:] = [x / 100 for x in final]
+final[:] = [x / 10 for x in final]
 testOut.append("final")
 testOut.append(final)
-np.savetxt('testNoDup.out', testOut, fmt='%s')
+np.savetxt('pipe.out', testOut, fmt='%s')
