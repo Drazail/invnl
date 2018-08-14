@@ -27,7 +27,7 @@ from pyearth import Earth
 
 from sklearn.pipeline import Pipeline
 import matplotlib.pyplot as plt
-
+    
 
 f = open("./DataSets/CombinedNoDupe.csv")
 
@@ -42,14 +42,16 @@ y = data[:, 22]
 #y = iris.target
 
 
-names = ["AdaBoostedLogisticsRegression","LogisticRegression"]
+names = ["AdaBoostedLogisticsRegression", "LogisticRegression"]
 
 boosted_model = AdaBoostClassifier(DecisionTreeClassifier(max_depth=5))
 
 classifiers = [
-    AdaBoostClassifier(n_estimators=5000, learning_rate=0.05, base_estimator=LogisticRegression()),
+    AdaBoostClassifier(n_estimators=5000, learning_rate=0.05,
+                       base_estimator=LogisticRegression()),
     LogisticRegression()
 ]
+
 
 
 testOut = []
@@ -58,20 +60,20 @@ recalls = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0]
 precisions = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 logLosses = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 final = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
+predictionRate =  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 i = 0
 
 while i < 10:
     for name, clf in zip(names, classifiers):
         train_feats, test_feats, train_labels, test_labels = tts(
-            X, y, test_size=0.2)
+            X, y, test_size=0.1)
         clf.fit(train_feats, train_labels)
         y_pred_class = clf.predict(test_feats)
-        
+
         score = accuracy_score(test_labels, y_pred_class)
         recall = recall_score(test_labels, y_pred_class)
         precision = precision_score(test_labels, y_pred_class)
-
+        prediction = clf.predict([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]])
         scores[names.index(name)] = scores[names.index(name)] + score/10
         recalls[names.index(name)] = recalls[names.index(name)] + recall/10
         precisions[names.index(name)] = precisions[names.index(
@@ -79,6 +81,12 @@ while i < 10:
 
         final[names.index(name)] = final[names.index(
             name)] + ((precision+score+recall)/30)
+        
+        predictionRate[names.index(name)] = predictionRate[names.index(name)] + prediction/10
+
     print(str(i) + " ---"),
     i += 1
-np.savetxt('pipe.out', [scores, recalls, precisions, final], fmt='%s')
+np.savetxt('pipe.out', [scores, recalls, precisions, final, predictionRate], fmt='%s')
+
+pred_feats = [2, 1, 38, 1, 1, 3, 1, 4, 1,
+              1, 1, 1, 2, 1, 1, 1, 2, 2, 1, 1, 2, 1]
