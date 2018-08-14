@@ -33,8 +33,8 @@ f = open("./DataSets/CombinedNoDupe.csv")
 
 data = np.loadtxt(f, delimiter=",")
 
-X = data[:, 0:21]
-y = data[:, 21]
+X = data[:, 0:22]
+y = data[:, 22]
 
 
 #iris = datasets.load_iris()
@@ -61,7 +61,7 @@ final = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 i = 0
 
-while i < 100:
+while i < 10:
     for name, clf in zip(names, classifiers):
         train_feats, test_feats, train_labels, test_labels = tts(
             X, y, test_size=0.2)
@@ -72,13 +72,13 @@ while i < 100:
         recall = recall_score(test_labels, y_pred_class)
         precision = precision_score(test_labels, y_pred_class)
 
-        scores[names.index(name)] = scores[names.index(name)] + score/100
-        recalls[names.index(name)] = recalls[names.index(name)] + recall/100
+        scores[names.index(name)] = scores[names.index(name)] + score/10
+        recalls[names.index(name)] = recalls[names.index(name)] + recall/10
         precisions[names.index(name)] = precisions[names.index(
-            name)] + precision/100
+            name)] + precision/10
 
         final[names.index(name)] = final[names.index(
-            name)] + ((precision+score+recall)/300)
+            name)] + ((precision+score+recall)/30)
     print(str(i) + " ---"),
     i += 1
 np.savetxt('pipe.out', [scores, recalls, precisions, final], fmt='%s')
