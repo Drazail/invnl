@@ -5,7 +5,7 @@ from sklearn import svm, datasets
 from sklearn.model_selection import train_test_split
 
 from sklearn.model_selection import train_test_split as tts
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, log_loss
 
 
 from matplotlib.colors import ListedColormap
@@ -18,10 +18,10 @@ from sklearn.svm import SVC
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier, GradientBoostingClassifier, voting_classifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-
+from sklearn.linear_model import LogisticRegression
 
 from pyearth import Earth
 
@@ -29,7 +29,7 @@ from sklearn.pipeline import Pipeline
 import matplotlib.pyplot as plt
 
 
-f = open("./DataSets/INnoDup.csv")
+f = open("./DataSets/CombinedNoDupe.csv")
 
 data = np.loadtxt(f, delimiter=",")
 
@@ -42,48 +42,43 @@ y = data[:, 21]
 #y = iris.target
 
 
-names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
-         "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
-         "Naive Bayes", "QDA"]
+names = ["AdaBoostedLogisticsRegression","LogisticRegression"]
 
 boosted_model = AdaBoostClassifier(DecisionTreeClassifier(max_depth=5))
 
 classifiers = [
-    KNeighborsClassifier(3),
-    SVC(kernel="linear", C=0.025),
-    SVC(gamma=2, C=1),
-    GaussianProcessClassifier(1.0 * RBF(1.0)),
-    DecisionTreeClassifier(max_depth=1),
-    RandomForestClassifier(max_depth=10000, n_estimators=2000, max_features=20),
-    MLPClassifier(alpha=1,max_iter=10000),
-    AdaBoostClassifier(),
-    GaussianNB(),
-    QuadraticDiscriminantAnalysis(),
-    ]
+    AdaBoostClassifier(n_estimators=5000, learning_rate=0.05, base_estimator=LogisticRegression()),
+    LogisticRegression()
+]
 
 
 testOut = []
-scores = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-final = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-j = 0
-while j < 10:
-    i = 0
-    while i < 10:
-        for name, clf in zip(names, classifiers):
-            train_feats, test_feats, train_labels, test_labels = tts(
-                X, y, test_size=0.2)
-            clf.fit(train_feats, train_labels)
-            score = clf.score(test_feats, test_labels)
-            scores[names.index(name)] = scores[names.index(name)] + score/10
-            final[names.index(name)] = final[names.index(name)] + score/10
-        print(str(j) + " ---"),
-        i += 1
-    testOut.append(scores)
+scores = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+recalls = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0]
+precisions = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+logLosses = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+final = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-    scores = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    np.savetxt('pipe.out', testOut, fmt='%s')
-    j += 1
-final[:] = [x / 10 for x in final]
-testOut.append("final")
-testOut.append(final)
-np.savetxt('pipe.out', testOut, fmt='%s')
+i = 0
+
+while i < 100:
+    for name, clf in zip(names, classifiers):
+        train_feats, test_feats, train_labels, test_labels = tts(
+            X, y, test_size=0.2)
+        clf.fit(train_feats, train_labels)
+        y_pred_class = clf.predict(test_feats)
+        
+        score = accuracy_score(test_labels, y_pred_class)
+        recall = recall_score(test_labels, y_pred_class)
+        precision = precision_score(test_labels, y_pred_class)
+
+        scores[names.index(name)] = scores[names.index(name)] + score/100
+        recalls[names.index(name)] = recalls[names.index(name)] + recall/100
+        precisions[names.index(name)] = precisions[names.index(
+            name)] + precision/100
+
+        final[names.index(name)] = final[names.index(
+            name)] + ((precision+score+recall)/300)
+    print(str(i) + " ---"),
+    i += 1
+np.savetxt('pipe.out', [scores, recalls, precisions, final], fmt='%s')
